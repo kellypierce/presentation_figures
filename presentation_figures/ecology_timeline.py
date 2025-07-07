@@ -31,9 +31,15 @@ def round_nearest(value: float|int, nearest: int, direction: str) -> float:
         raise ValueError("Direction must be 'down' or 'up'")
 
 
-def aggregate_data(data: pd.DataFrame, years: int) -> pd.DataFrame:
+def aggregate_data(data: pd.DataFrame, years: int, vertical: bool, annotate_year: bool=False) -> pd.DataFrame:
     """Round event years down to nearest century and group events by their century of occurrence."""
     data['plot_date'] = [round_nearest(i, nearest=years, direction="down") for i in data['relative_year']]
+    if annotate_year:
+        data['event'] = [f"{row['event']} ({abs(row['relative_year'])})" for i, row in data.iterrows()]
+    if vertical:
+        data = data.sort_values(by=['relative_year'], ascending=False)
+    else:
+        data = data.sort_values(by=['relative_year'], ascending=True)
     plot_data = data.groupby('plot_date')['event'].agg(lambda x: '\n'.join(x)).reset_index()
     return plot_data
 
@@ -53,10 +59,13 @@ def calculate_text_height(data: pd.DataFrame, years_per_line) -> pd.DataFrame:
     return data
 
 
-def place_text_vertical_timeline(data: pd.DataFrame, overlap_buffer: float|int) -> pd.DataFrame|None:
+def place_text_timeline(data: pd.DataFrame, overlap_buffer: float|int, vertical: bool = True) -> pd.DataFrame|None:
 
     # reshape and identify overlaps
-    data = data.sort_values(by="plot_date", ascending=False)  # most recent values at the top
+    if vertical:
+        data = data.sort_values(by="plot_date", ascending=False)  # most recent values at the top
+    else:
+        data = data.sort_values(by="plot_date", ascending=True)  # most recent values at the left
     data['overlap_buffer'] = (data['n_lines'] + 1) * overlap_buffer
 
     # does a record top overlap the bottom of the next record?
@@ -69,7 +78,7 @@ def place_text_vertical_timeline(data: pd.DataFrame, overlap_buffer: float|int) 
         for position in ["text_top", "text_center", "text_bottom"]:
             overlap_data[position] = overlap_data[position] - overlap_data["overlap_buffer"]
         data = pd.concat([overlap_data, other_data])
-        return place_text_vertical_timeline(data, overlap_buffer=overlap_buffer)
+        return place_text_timeline(data, overlap_buffer=overlap_buffer)
     else:
         offset = abs(min(0, min(data['plot_date'])))
         for position in ["text_top", "text_center", "text_bottom"]:
