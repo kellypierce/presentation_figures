@@ -1,16 +1,18 @@
 {"event": "Study of geometry begins", "relative_year": -2100, "field": "mathematics", "contributors": ["numerous from Babylon, Egypt"], "include": "True"}
 {"event": "Medical text 'Sushruta Samhita' written", "relative_year": -400, "field": "biology", "contributors": ["Sushruta", "Divodasa"], "include": "False"}
 {"event": "Study of trigonometry begins", "relative_year": -300, "field": "mathematics", "contributors": ["Euclid"], "include": "True"}
-{"event": "The cell is discovered", "relative_year": 1665, "field": "biology", "contributors": ["R. Hooke"], "include": "True"}
+{"event": "The cell is discovered", "relative_year": 1665, "field": "biology", "contributors": ["R. Hooke"], "include": "False"}
 {"event": "Laws of motion proposed", "relative_year": 1687, "field": "physics", "contributors": "I. Newton", "include": "False"}
-{"event": "Binomial nomenclature for taxonomy","relative_year": 1735,"field": "biology","contributors": ["C. Linnaeus"],"include": "True"}
+{"event": "Binomial nomenclature for taxonomy","relative_year": 1735,"field": "biology","contributors": ["C. Linnaeus"],"include": "False"}
 {"event": "Heliocentric model of planetary movement","relative_year": 1543,"field": "astronomy","contributors": ["Copernicus"],"include": "False"}
-{"event": "Study of modern chemistry begins","relative_year": 1789,"field": "chemistry","contributors": ["A. Lavoisier"],"include": "False"}
-{"event": "Germ theory first proposed","relative_year": 1861,"field": "biology","contributors": ["L. Pasteur"],"include": "False"}
-{"event": "Theory of evolution first proposed","relative_year": 1859,"field": "biology","contributors": ["C. Darwin", "A. R. Wallace"],"include": "True"}
-{"event": "Polio vaccine developed","relative_year": 1952,"field": "biology","contributors": ["J. Salk"],"include": "False"}
-{"event": "Helical structure of DNA described","relative_year": 1953,"field": "biology","contributors": ["J. Watson", "F. Crick", "M. Wilkins", "R. Franklin"],"include": "True"}
-{"event": "'Paradox of the plankton' published","relative_year": 1961,"field": "biology","contributors": ["G. E. Hutchinson"],"include": "False"}
-{"event": "First volume of 'Kosmos' published","relative_year": 1847,"field": "biology","contributors": ["A. Humboldt"],"include": "True"}
-{"event": "'The theory of island biogeography' published","relative_year": 1967,"field": "biology","contributors": ["E. O. Wilson", "R. MacArthur"], "include":  "True"}
+{"event": "Study of modern chemistry begins","relative_year": 1789,"field": "chemistry","contributors": ["A. Lavoisier"], "include": "False"}
+{"event": "Germ theory first proposed","relative_year": 1861,"field": "biology","contributors": ["L. Pasteur"], "include": "False"}
+{"event": "Theory of evolution first proposed","relative_year": 1859,"field": "biology","contributors": ["C. Darwin", "A. R. Wallace"], "include": "False"}
+{"event": "Polio vaccine developed","relative_year": 1952,"field": "biology","contributors": ["J. Salk"], "include": "False"}
+{"event": "Helical structure of DNA described","relative_year": 1953,"field": "biology","contributors": ["J. Watson", "F. Crick", "M. Wilkins", "R. Franklin"], "include": "True"}
+{"event": "'Paradox of the plankton' published","relative_year": 1961,"field": "biology","contributors": ["G. E. Hutchinson"], "include": "False"}
+{"event": "First volume of 'Kosmos' published","relative_year": 1847,"field": "biology","contributors": ["A. Humboldt"], "include": "False"}
+{"event": "'The theory of island biogeography' published","relative_year": 1967,"field": "biology","contributors": ["E. O. Wilson", "R. MacArthur"], "include": "True"}
+{"event": "Golden age of European colonial science begins", "relative_year": 1700, "field": "numerous", "contributors": "many; this entry is a plotting convenience.", "include": "True"}
+{"event": "US Environmental Protection Agency established", "relative_year": 1970, "field": "biology", "contributors": "US executive branch", "include":  "True"}
 {"event": "Society for Conservation Biology founded","relative_year": 1985,"field": "biology","contributors": ["J. Diamond", "P. Brussard", "ad hoc committees"], "include":  "True"}
