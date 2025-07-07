@@ -127,36 +127,68 @@ def timeline_vertical(data: pd.DataFrame, years: int) -> None:
     plt.show()
 
 
-def timeline_horizontal(data: pd.DataFrame) -> None:
-    raise NotImplementedError
+def timeline_horizontal(data: pd.DataFrame, years:int) -> None:
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.set(title="")
+    ax.vlines(data['plot_date'], 0, 0.1, color="k")
+    ax.axhline(0, c="black", linewidth=10)
+    ax.set_ylim(0, 1)
+
+    # Annotate the lines and draw lines to annotations
+    plt.subplots_adjust(right=0.75) # make the right margin bigger
+    for i, event in data.iterrows():
+        ax.plot([event['plot_date'], event['text_top']], [0.1, 0.2], color="black")
+        text_position = event['text_center']
+        ax.annotate(
+            event['event'],
+            xy=(text_position, 0.21),
+            xytext=(text_position, 0.21),
+            bbox=dict(facecolor='white', alpha=0, edgecolor='none'),
+            rotation=45,
+        )
+
+    # update tick marks on y-axis
+    ticks, marks = make_tick_marks(data, interval_years=years * 5)
+    plt.xticks(ticks, marks, rotation=0)
+
+    # turn axis spines off; turn x-axis off
+    for position in ['top', 'right', 'left', 'bottom']:
+        ax.spines[position].set_visible(False)
+    ax.yaxis.set_visible(False)
+
+    plt.show()
 
 
-def main(data_fpath, years, vertical=True) -> None:
+def main(data_fpath, years, vertical, annotate_year) -> None:
 
     # load files
     data = load_jsonl(data_fpath)
 
     # make the timeline
-    data = aggregate_data(data, years=years)
+    data = aggregate_data(data, years=years, vertical=vertical, annotate_year=annotate_year)
     data = calculate_text_height(data, years_per_line=years)
-    data = place_text_vertical_timeline(data, overlap_buffer=years)
+    data = place_text_timeline(data, overlap_buffer=years)
 
     if vertical:
         timeline_vertical(data, years=years)
     else:
-        timeline_horizontal(data)
+        timeline_horizontal(data, years=years)
 
 if __name__ == "__main__":
 
     import argparse
     parser = argparse.ArgumentParser()
     parser.add_argument("-d", "--data_fpath", required=True, help="Path to jsonl data file containing timeline data.")
-    parser.add_argument("-v", "--vertical", action="store_true", default=True, help="If specified, create a vertical timeline.")
+    parser.add_argument("-v", "--vertical", action="store_true", help="If specified, create a vertical timeline.")
+    parser.add_argument("-y", "--aggregate_years", required=False, type=int, help="Number of years to aggregate for display.", default=100)
+    parser.add_argument("-a", "--annotate_year", required=False, action="store_true", help="If specified, include the event year in the annotation text.")
+
+    # todo: allow yaml config for additional plot aesthetics
     parser.add_argument("-p", "--parameters", required=False, help="Additional parameters for timeline aesthetics.")
-    parser.add_argument("-y", "--years", required=False, type=int, help="Number of years to aggregate", default=100)
 
     opts = parser.parse_args()
     if opts.parameters:
         raise NotImplementedError("Timeline aesthetics not yet implemented.")
 
-    main(opts.data_fpath, opts.years, opts.vertical)
+    main(data_fpath=opts.data_fpath, years=opts.aggregate_years, vertical=opts.vertical, annotate_year=opts.annotate_year)
