@@ -106,13 +106,13 @@ def timeline_vertical(data: pd.DataFrame, years: int) -> None:
 
     # Annotate the lines and draw lines to annotations
     for i, event in data.iterrows():
-        ax.plot([0.1, 0.3], [event['plot_date'], event['text_top']], color="black")
+        ax.plot([0.1, 0.2], [event['plot_date'], event['text_top']], color="black")
         text_position = event['text_center'] - years/2
         ax.annotate(
             event['event'],
-            xy=(0.31, text_position),
-            xytext=(0.31, text_position),
-            backgroundcolor='white',
+            xy=(0.21, text_position),
+            xytext=(0.21, text_position),
+            bbox=dict(facecolor='white', alpha=0, edgecolor='none')
         )
 
     # update tick marks on y-axis
