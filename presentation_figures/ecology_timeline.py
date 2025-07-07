@@ -31,20 +31,27 @@ def round_nearest(value: float|int, nearest: int, direction: str) -> float:
         raise ValueError("Direction must be 'down' or 'up'")
 
 
-def make_data_century(data: pd.DataFrame) -> pd.DataFrame:
+def aggregate_data(data: pd.DataFrame, years: int, vertical: bool, annotate_year: bool=False) -> pd.DataFrame:
     """Round event years down to nearest century and group events by their century of occurrence."""
-    data['plot_date'] = [round_nearest(i) for i in data['relative_year']]
+    data['plot_date'] = [round_nearest(i, nearest=years, direction="down") for i in data['relative_year']]
+    if annotate_year:
+        data['event'] = [f"{row['event']} ({abs(row['relative_year'])})" for i, row in data.iterrows()]
+    if vertical:
+        data = data.sort_values(by=['relative_year'], ascending=False)
+    else:
+        data = data.sort_values(by=['relative_year'], ascending=True)
     plot_data = data.groupby('plot_date')['event'].agg(lambda x: '\n'.join(x)).reset_index()
     return plot_data
 
 
-def calculate_text_height(data: pd.DataFrame, years_per_line=100) -> pd.DataFrame:
+def calculate_text_height(data: pd.DataFrame, years_per_line) -> pd.DataFrame:
 
     # count number of text lines
-    data['text_height'] = [len(re.findall("\n", i)) * years_per_line for i in data['event']]
+    data['n_lines'] = [len(re.findall("\n", i)) for i in data['event']]
+    data['text_height'] = data['n_lines'] * years_per_line
 
     # make all values positive and calculate bottom and top of text block
-    offset = abs(min(data['plot_date']))
+    offset = abs(min(0, min(data['plot_date'])))
     data['text_center'] = data['plot_date'] + offset
     data['text_top'] = data['text_center'] + (data['text_height'] / 2)
     data['text_bottom'] = abs(data['text_center']) - data['text_height']
@@ -52,30 +59,34 @@ def calculate_text_height(data: pd.DataFrame, years_per_line=100) -> pd.DataFram
     return data
 
 
-def place_text_vertical_timeline(data: pd.DataFrame, overlap_buffer: float|int = 100) -> pd.DataFrame|None:
+def place_text_timeline(data: pd.DataFrame, overlap_buffer: float|int, vertical: bool = True) -> pd.DataFrame|None:
 
     # reshape and identify overlaps
-    data = data.sort_values(by="plot_date", ascending=False)  # most recent values at the top
+    if vertical:
+        data = data.sort_values(by="plot_date", ascending=False)  # most recent values at the top
+    else:
+        data = data.sort_values(by="plot_date", ascending=True)  # most recent values at the left
+    data['overlap_buffer'] = (data['n_lines'] + 1) * overlap_buffer
 
     # does a record top overlap the bottom of the next record?
-    data["overlaps_present"] = [False] + [True if data["text_top"].iloc[i] + overlap_buffer >= data["text_bottom"].iloc[i-1] else False for i in range(1, data.shape[0])]
+    data["overlaps_present"] = [False] + [True if data["text_top"].iloc[i] + data["overlap_buffer"].iloc[i] >= data["text_bottom"].iloc[i-1] else False for i in range(1, data.shape[0])]
 
     # bump everything down until there are no overlaps
     if data["overlaps_present"].any():
         overlap_data = data[data["overlaps_present"] == True]
         other_data = data[data["overlaps_present"] == False]
         for position in ["text_top", "text_center", "text_bottom"]:
-            overlap_data[position] = overlap_data[position] - overlap_buffer
+            overlap_data[position] = overlap_data[position] - overlap_data["overlap_buffer"]
         data = pd.concat([overlap_data, other_data])
-        return place_text_vertical_timeline(data)
+        return place_text_timeline(data, overlap_buffer=overlap_buffer)
     else:
-        offset = abs(min(data['plot_date']))
+        offset = abs(min(0, min(data['plot_date'])))
         for position in ["text_top", "text_center", "text_bottom"]:
             data[position] = data[position] - offset
         return data
 
 
-def make_tick_marks(data: pd.DataFrame, interval_years: int = 500) -> (list[int], list[str]):
+def make_tick_marks(data: pd.DataFrame, interval_years: int) -> (list[int], list[str]):
 
     data_min = round_nearest(data["plot_date"].min(), interval_years, direction="down")
     data_max = round_nearest(data["plot_date"].max(), interval_years, direction="up")
@@ -85,7 +96,7 @@ def make_tick_marks(data: pd.DataFrame, interval_years: int = 500) -> (list[int]
     return ticks, marks
 
 
-def timeline_vertical(data: pd.DataFrame) -> None:
+def timeline_vertical(data: pd.DataFrame, years: int) -> None:
 
     fig, ax = plt.subplots(figsize=(7, 6))
     ax.set(title="")
@@ -95,17 +106,17 @@ def timeline_vertical(data: pd.DataFrame) -> None:
 
     # Annotate the lines and draw lines to annotations
     for i, event in data.iterrows():
-        ax.plot([0.1, 0.3], [event['plot_date'], event['text_top']], color="black")
-        text_position = event['text_center'] - 50
+        ax.plot([0.1, 0.2], [event['plot_date'], event['text_top']], color="black")
+        text_position = event['text_center'] - years/2
         ax.annotate(
             event['event'],
-            xy=(0.31, text_position),
-            xytext=(0.31, text_position),
-            backgroundcolor='white',
+            xy=(0.21, text_position),
+            xytext=(0.21, text_position),
+            bbox=dict(facecolor='white', alpha=0, edgecolor='none')
         )
 
     # update tick marks on y-axis
-    ticks, marks = make_tick_marks(data)
+    ticks, marks = make_tick_marks(data, interval_years=years*5)
     plt.yticks(ticks, marks)
 
     # turn axis spines off; turn x-axis off
@@ -116,27 +127,68 @@ def timeline_vertical(data: pd.DataFrame) -> None:
     plt.show()
 
 
-def timeline_horizontal(data: pd.DataFrame) -> None:
-    raise NotImplementedError
+def timeline_horizontal(data: pd.DataFrame, years:int) -> None:
+
+    fig, ax = plt.subplots(figsize=(10, 4))
+    ax.set(title="")
+    ax.vlines(data['plot_date'], 0, 0.1, color="k")
+    ax.axhline(0, c="black", linewidth=10)
+    ax.set_ylim(0, 1)
+
+    # Annotate the lines and draw lines to annotations
+    plt.subplots_adjust(right=0.75) # make the right margin bigger
+    for i, event in data.iterrows():
+        ax.plot([event['plot_date'], event['text_top']], [0.1, 0.2], color="black")
+        text_position = event['text_center']
+        ax.annotate(
+            event['event'],
+            xy=(text_position, 0.21),
+            xytext=(text_position, 0.21),
+            bbox=dict(facecolor='white', alpha=0, edgecolor='none'),
+            rotation=45,
+        )
+
+    # update tick marks on y-axis
+    ticks, marks = make_tick_marks(data, interval_years=years * 5)
+    plt.xticks(ticks, marks, rotation=0)
+
+    # turn axis spines off; turn x-axis off
+    for position in ['top', 'right', 'left', 'bottom']:
+        ax.spines[position].set_visible(False)
+    ax.yaxis.set_visible(False)
+
+    plt.show()
 
 
-def main(
-    data_fpath: str = "/Users/Kelly/presentation_figures/figure_data/ecology_timeline.jsonl",
-    vertical=True
-) -> None:
+def main(data_fpath, years, vertical, annotate_year) -> None:
 
     # load files
     data = load_jsonl(data_fpath)
 
     # make the timeline
-    data = make_data_century(data)
-    data = calculate_text_height(data)
-    data = place_text_vertical_timeline(data)
+    data = aggregate_data(data, years=years, vertical=vertical, annotate_year=annotate_year)
+    data = calculate_text_height(data, years_per_line=years)
+    data = place_text_timeline(data, overlap_buffer=years)
 
     if vertical:
-        timeline_vertical(data)
+        timeline_vertical(data, years=years)
     else:
-        timeline_horizontal(data)
+        timeline_horizontal(data, years=years)
 
 if __name__ == "__main__":
-    main()
+
+    import argparse
+    parser = argparse.ArgumentParser()
+    parser.add_argument("-d", "--data_fpath", required=True, help="Path to jsonl data file containing timeline data.")
+    parser.add_argument("-v", "--vertical", action="store_true", help="If specified, create a vertical timeline.")
+    parser.add_argument("-y", "--aggregate_years", required=False, type=int, help="Number of years to aggregate for display.", default=100)
+    parser.add_argument("-a", "--annotate_year", required=False, action="store_true", help="If specified, include the event year in the annotation text.")
+
+    # todo: allow yaml config for additional plot aesthetics
+    parser.add_argument("-p", "--parameters", required=False, help="Additional parameters for timeline aesthetics.")
+
+    opts = parser.parse_args()
+    if opts.parameters:
+        raise NotImplementedError("Timeline aesthetics not yet implemented.")
+
+    main(data_fpath=opts.data_fpath, years=opts.aggregate_years, vertical=opts.vertical, annotate_year=opts.annotate_year)
